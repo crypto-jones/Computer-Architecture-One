@@ -1,54 +1,43 @@
 const RAM = require('./ram');
 const CPU = require('./cpu');
-// const MULT = require('./mult.ls8');
+const fs = require('fs');
 
 /**
  * Load an LS8 program into memory
  *
  * TODO: load this from a file on disk instead of having it hardcoded
  */
-function loadMemory() {
-  // Hardcoded program to print the number 8 on the console
 
-  const program = [
-    // print8.ls8
-    // '10011001', // LDI R0,8  Store 8 into R0
-    // '00000000',
-    // '00001000',
-    // '01000011', // PRN R0    Print the value in R0
-    // '00000000',
-    // '00000001' // HLT       Halt and quit
+let ram = new RAM(256);
+let cpu = new CPU(ram);
 
-    // mult.ls8
-    '10011001', // LDI R0,8  Load R0 with value 8
-    '00000000',
-    '00001000',
-    '10011001', // LDI R1,9  Load R1 with value 9
-    '00000001',
-    '00001001',
-    '10101010', // MUL R0,R1 Multiply R0*R1, storing result in R0
-    '00000000',
-    '00000001',
-    '01000011', // PRN R0    Print value in R0
-    '00000000',
-    '00000001' // HLT       Halt
-  ];
+const argv = process.argv.slice(1);
 
-  // Load the program into the CPU's memory a byte at a time
-  for (let i = 0; i < program.length; i++) {
-    cpu.poke(i, parseInt(program[i], 2));
-  }
+let filename = argv[1];
+if (!filename) {
+  console.log('usage: [filename]');
+  process.exit(1);
+}
+if (!filename.endsWith('.ls8')) {
+  filename = filename + '.ls8';
+}
+
+const filedata = fs.readFileSync(filename, 'utf8');
+
+const lines = filedata
+  .split('\n')
+  .filter(line => line.startsWith('0') || line.startsWith('1'))
+  .map(line => line.split('#'))
+  .map(line => line[0].trim());
+
+for (let i = 0; i < lines.length; i++) {
+  cpu.poke(i, parseInt(lines[i], 2));
 }
 
 /**
  * Main
  */
 
-let ram = new RAM(256);
-let cpu = new CPU(ram);
-
 // TODO: get name of ls8 file to load from command line
-
-loadMemory(cpu);
 
 cpu.startClock();
